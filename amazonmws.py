@@ -87,10 +87,10 @@ class MWS:
 
         # Create the signature
         signature = b64encode(hmac.new(self._secret_key.encode(), sig_data.encode(), sha256).digest())
-        signature = urllib.parse.quote(signature.decode())
+        signature = urllib.parse.quote(signature.decode(), safe='')
 
         # Create the URL
-        url = 'https://{dom}{uri}/?{req}&Signature={sig}'.format(dom=self._domain, uri=self.URI, req=request_desc, sig=signature)
+        url = 'https://{dom}{uri}?{req}&Signature={sig}'.format(dom=self._domain, uri=self.URI, req=request_desc, sig=signature)
 
         return url
 
@@ -141,6 +141,3 @@ class Products(MWS):
 from mwskeys import *
 def make_mws():
     return Products(mws_accesskey, mws_secretkey, mws_sellerid)
-
-
-qs = 'POST\nmws.amazonservices.com\n/Products/2011-10-01\nAWSAccessKeyId=AKIAJ2QHK4HITY4NSJ4A&Action=ListMatchingProducts&MarketplaceId=ATVPDKIKX0DER&Query=Rubbermaid&SellerId=A12JDA8143PAJO&SignatureMethod=HmacSHA256&SignatureVersion=2&Timestamp=2016-09-19T16%3A16%3A31Z&Version=2011-10-01'

@@ -38,7 +38,7 @@ class MWSError(Exception):
     pass
 
 
-class MWS:
+class MWSCall:
     """ Base class for the MWS API.
 
     Handles building requests to send to Amazon."""
@@ -49,16 +49,17 @@ class MWS:
     USER_AGENT = 'amazonmws/0.0.1 (Language=Python)'
     DEFAULT_MARKET = 'US'
 
-    def __init__(self, access_key, secret_key, account_id, region='NA', domain='', version='', auth_token='', user_agent=''):
+    def __init__(self, access_key, secret_key, account_id, region='NA', auth_token='', user_agent='', action=''):
         self._access_key = access_key
         self._secret_key = secret_key
         self._account_id = account_id
         self._auth_token = auth_token
-        self._version = version or self.VERSION
         self._user_agent = user_agent or self.USER_AGENT
+        self._region = region
+        self._action = action
 
         try:
-            self._domain = domain or ENDPOINTS[region]
+            self._domain = ENDPOINTS[region]
         except KeyError:
             msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(ENDPOINTS.keys()))
             raise MWSError(msg)
@@ -73,7 +74,7 @@ class MWS:
                   'SignatureMethod': 'HmacSHA256',
                   'SignatureVersion': '2',
                   'Timestamp': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
-                  'Version': self._version}
+                  'Version': self.VERSION}
 
         if self._auth_token:
             params['MWSAuthToken'] = self._auth_token
@@ -94,6 +95,15 @@ class MWS:
 
         return url
 
+    def __getattr__(self, name):
+        return type(self)(self._access_key, self._secret_key, self._account_id,
+                          region=self._region, auth_token=self._auth_token, user_agent=self._user_agent,
+                          action=name)
+
+    def __call__(self, **kwargs):
+        url = self.build_request_url('POST', self._action, **kwargs)
+        headers = self.build_headers()
+        return self.make_request('POST', url, data='', headers=headers)
 
     def build_headers(self, **kwargs):
         """Return a dictionary with header information."""
@@ -101,8 +111,7 @@ class MWS:
         headers.update(kwargs)
         return headers
 
-
-    def market_id(self, market):
+    def market_id(self, market=''):
         """Return the Amazon Market ID for the given market."""
         try:
             return MARKETIDS[market or self.DEFAULT_MARKET]
@@ -116,7 +125,7 @@ class MWS:
         return requests.request(method, url, data=data, headers=headers)
 
 
-class Products(MWS):
+class Products(MWSCall):
 
     URI = '/Products/2011-10-01'
     VERSION = '2011-10-01'

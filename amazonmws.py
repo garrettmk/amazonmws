@@ -10,7 +10,7 @@ import requests
 
 from time import strftime, gmtime
 from base64 import b64encode
-from hashlib import sha256
+from hashlib import sha256, md5
 
 
 ENDPOINTS = {'NA': 'mws.amazonservices.com',
@@ -31,9 +31,6 @@ MARKETIDS = {'CA': 'A2EUQ1WTGCTBG2',
              'JP': 'A21TJRUUN4KGV',
              'CN': 'AAHKV2X7AFYLW'}
 
-THROTTLING = {'ListMatchingProducts': (20, 5, 720)}
-
-
 class MWSError(Exception):
     pass
 
@@ -49,14 +46,18 @@ class MWSCall:
     USER_AGENT = 'amazonmws/0.0.1 (Language=Python)'
     DEFAULT_MARKET = 'US'
 
-    def __init__(self, access_key, secret_key, account_id, region='NA', auth_token='', user_agent='', action=''):
+    def __init__(self, access_key, secret_key, account_id, region='NA', auth_token='', action='',
+                 uri='', version='', account_type='', user_agent=''):
         self._access_key = access_key
         self._secret_key = secret_key
         self._account_id = account_id
-        self._auth_token = auth_token
-        self._user_agent = user_agent or self.USER_AGENT
         self._region = region
+        self._auth_token = auth_token
         self._action = action
+        self._uri = uri or self.URI
+        self._version = version or self.VERSION
+        self._account_type = account_type or self.ACCOUNT_TYPE
+        self._user_agent = user_agent or self.USER_AGENT
 
         try:
             self._domain = ENDPOINTS[region]
@@ -64,50 +65,61 @@ class MWSCall:
             msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(ENDPOINTS.keys()))
             raise MWSError(msg)
 
-
-    def build_request_url(self, method, Action, **kwargs):
+    def build_request_url(self, method, action, **kwargs):
         """Return a properly formatted and signed request URL based on the given parameters."""
 
         params = {'AWSAccessKeyId': self._access_key,
-                  'Action': Action,
-                  self.ACCOUNT_TYPE: self._account_id,
+                  'Action': action,
+                  self._account_type: self._account_id,
                   'SignatureMethod': 'HmacSHA256',
                   'SignatureVersion': '2',
                   'Timestamp': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
-                  'Version': self.VERSION}
+                  'Version': self._version}
 
         if self._auth_token:
             params['MWSAuthToken'] = self._auth_token
 
-        params.update({k:v for k,v in kwargs.items() if v})
+        for k, v in kwargs.items():
+            if k.endswith('List'):
+                params.update(self.enumerate_param(k, v))
+            elif v:
+                params.update({k:v})
 
         pairs = ['{}={}'.format(key, urllib.parse.quote(params[key], safe='-_.~', encoding='utf-8')) for key in sorted(params)]
         request_desc = '&'.join(pairs)
 
-        sig_data = '{verb}\n{dom}\n{uri}\n{req}'.format(verb=method, dom=self._domain.lower(), uri=self.URI, req=request_desc)
+        sig_data = '{verb}\n{dom}\n{uri}\n{req}'.format(verb=method, dom=self._domain.lower(), uri=self._uri, req=request_desc)
 
         # Create the signature
         signature = b64encode(hmac.new(self._secret_key.encode(), sig_data.encode(), sha256).digest())
         signature = urllib.parse.quote(signature.decode(), safe='')
 
         # Create the URL
-        url = 'https://{dom}{uri}?{req}&Signature={sig}'.format(dom=self._domain, uri=self.URI, req=request_desc, sig=signature)
+        url = 'https://{dom}{uri}?{req}&Signature={sig}'.format(dom=self._domain, uri=self._uri, req=request_desc, sig=signature)
 
         return url
 
     def __getattr__(self, name):
-        return type(self)(self._access_key, self._secret_key, self._account_id,
-                          region=self._region, auth_token=self._auth_token, user_agent=self._user_agent,
-                          action=name)
+        return MWSCall(self._access_key, self._secret_key, self._account_id, region=self._region,
+                       auth_token=self._auth_token, action=name, uri=self._uri, version=self._version,
+                       account_type=self._account_type, user_agent=self._user_agent)
 
     def __call__(self, **kwargs):
+        extra_headers = {}
+
+        body = kwargs.pop('body', None)
+        if body:
+            md = b64encode(md5(body.encode()).digest()).strip(b'\n')
+            extra_headers = {'Content-MD5': md, 'Content-Type': 'text/xml'}
+
+        headers = self.build_headers(**extra_headers)
         url = self.build_request_url('POST', self._action, **kwargs)
-        headers = self.build_headers()
-        return self.make_request('POST', url, data='', headers=headers)
+
+        return self.make_request('POST', url, data=body, headers=headers)
 
     def build_headers(self, **kwargs):
         """Return a dictionary with header information."""
-        headers = {'User-Agent': self.USER_AGENT}
+        headers = {'User-Agent': self._user_agent}
         headers.update(kwargs)
         return headers
 
@@ -119,34 +131,85 @@ class MWSCall:
             msg = 'Invalid market: {}. Recognized values are {}.'.format(market, ', '.join(MARKETIDS.keys()))
             raise MWSError(msg)
 
+    def enumerate_param(self, root, values):
+        ptype = root[:-4]        # Ex: ASINList -> ASIN
+        params = {}
+
+        for num, val in enumerate(values, start=1):
+            base = '{}.{}.{}'.format(root, ptype, num)
+            if isinstance(val, dict):
+                params.update({'{}.{}'.format(base, k):v for k,v in val.items()})
+            else:
+                params.update({base:val})
+
+        return params
 
     def make_request(self, method, url, data='', headers={}):
         """Return a requests response object for the the given request."""
         return requests.request(method, url, data=data, headers=headers)
 
 
-class Products(MWSCall):
+class Feeds(MWSCall):
+    """Interface to the Feeds section of the MWS API."""
+    URI = '/'
+    VERSION = '2009-01-01'
 
+class Finances(MWSCall):
+    """Interface to the Finances section of the API."""
+    URI = '/Finances/2015-05-01'
+    VERSION = '2015-05-01'
+
+class Products(MWSCall):
+    """Interface to the Products section of the MWS API."""
     URI = '/Products/2011-10-01'
     VERSION = '2011-10-01'
 
-    def list_matching_products(self, query, market='', querycontextid=''):
-        url = self.build_request_url('POST', Action='ListMatchingProducts',
-                                     MarketplaceId=self.market_id(market),
-                                     Query=query,
-                                     QueryContextId=querycontextid)
-        headers = self.build_headers()
-        return self.make_request('POST', url, headers=headers)
+class FulfillmentInboundShipment(MWSCall):
+    """Interface to the Fulfillment Inbound Shipment section of the API."""
+    URI = '/FulfillmentInboundShipment/2010-10-01'
+    VERSION = '2010-10-01'
 
-    def get_service_status(self):
-        url = self.build_request_url('POST', Action='GetServiceStatus')
-        headers = self.build_headers()
-        return self.make_request('POST', url, headers=headers)
+class FulfillmentInventory(MWSCall):
+    """Interface to the Fulfillment Inventory section of the API."""
+    URI = '/FulfillmentInventory/2010-10-01'
+    VERSION = '2010-10-01'
 
+class FulfillmentOutboundShipment(MWSCall):
+    """Interface to the Fulfillment Outbound Shipment section of the API."""
+    URI = '/FulfillmentOutboundShipment/2010-10-01'
+    VERSION = '2010-10-01'
 
+class MerchantFulfillment(MWSCall):
+    """Interface to the Merchant Fulfillment section of the API."""
+    URI = '/MerchantFulfillment/2015-06-01'
+    VERSION = '2015-06-01'
 
+class Orders(MWSCall):
+    """Interface to the Orders section of the API."""
+    URI = '/Orders/2013-09-01'
+    VERSION = '2013-09-01'
 
-# Just used for debugging right now
-from mwskeys import *
-def make_mws():
-    return Products(mws_accesskey, mws_secretkey, mws_sellerid)
+class Products(MWSCall):
+    """Interface to the Products section of the API."""
+    URI = '/Products/2011-10-01'
+    VERSION = '2011-10-01'
+
+class Recommendations(MWSCall):
+    """Interface to the Recommendations section of the API."""
+    URI = '/Recommendations/2013-04-01'
+    VERSION = '2013-04-01'
+
+class Reports(MWSCall):
+    """Interface to the Reports section of the API."""
+    URI = '/'
+    VERSION ='2009-01-01'
+
+class Sellers(MWSCall):
+    """Interface to the Sellers section of the API."""
+    URI = '/Sellers'
+    VERSION = '2011-07-01'
+
+class Subscriptions(MWSCall):
+    """Interface to the Subscriptions section of the API."""
+    URI = '/Subscriptions/2013-07-01'
+    VERSION = '2013-07-01'

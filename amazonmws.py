@@ -80,11 +80,12 @@ class MWSCall:
             params['MWSAuthToken'] = self._auth_token
 
         for k, v in kwargs.items():
-            if k.endswith('List'):
+            if k.endswith('List') or k.startswith('List'):
                 params.update(self.enumerate_param(k, v))
             elif v:
                 params.update({k:v})
 
+        # Create the string to sign
         pairs = ['{}={}'.format(key, urllib.parse.quote(params[key], safe='-_.~', encoding='utf-8')) for key in sorted(params)]
         request_desc = '&'.join(pairs)
 
@@ -131,8 +132,14 @@ class MWSCall:
             msg = 'Invalid market: {}. Recognized values are {}.'.format(market, ', '.join(MARKETIDS.keys()))
             raise MWSError(msg)
 
+
     def enumerate_param(self, root, values):
-        ptype = root[:-4]        # Ex: ASINList -> ASIN
+
+        if root == 'MarketplaceId':
+            ptype = 'Id'
+        else:
+            ptype = root.replace('List', '')        # Ex: ASINList -> ASIN
+
         params = {}
 
         for num, val in enumerate(values, start=1):

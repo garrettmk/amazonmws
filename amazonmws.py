@@ -4,13 +4,14 @@
 # Based on python-amazon-mws: https://github.com/czpython/python-amazon-mws/
 #
 
-import urllib
 import hmac
 import requests
+import urllib
 
-from time import strftime, gmtime
 from base64 import b64encode
+from functools import partial
 from hashlib import sha256, md5
+from time import strftime, gmtime
 
 
 ENDPOINTS = {'NA': 'mws.amazonservices.com',
@@ -31,6 +32,7 @@ MARKETIDS = {'CA': 'A2EUQ1WTGCTBG2',
              'JP': 'A21TJRUUN4KGV',
              'CN': 'AAHKV2X7AFYLW'}
 
+
 class MWSError(Exception):
     pass
 
@@ -46,18 +48,18 @@ class MWSCall:
     USER_AGENT = 'amazonmws/0.0.1 (Language=Python)'
     DEFAULT_MARKET = 'US'
 
-    def __init__(self, access_key, secret_key, account_id, region='NA', auth_token='', action='',
-                 uri='', version='', account_type='', user_agent=''):
+    def __init__(self, access_key, secret_key, account_id, region='NA', auth_token='',
+                 uri='', version='', account_type='', user_agent='', make_request=None):
         self._access_key = access_key
         self._secret_key = secret_key
         self._account_id = account_id
         self._region = region
         self._auth_token = auth_token
-        self._action = action
         self._uri = uri or self.URI
         self._version = version or self.VERSION
         self._account_type = account_type or self.ACCOUNT_TYPE
         self._user_agent = user_agent or self.USER_AGENT
+        self.set_request_function(make_request)
 
         try:
             self._domain = ENDPOINTS[region]
@@ -86,7 +88,7 @@ class MWSCall:
                 params.update({k:v})
 
         # Create the string to sign
-        pairs = ['{}={}'.format(key, urllib.parse.quote(params[key], safe='-_.~', encoding='utf-8')) for key in sorted(params)]
+        pairs = ['{}={}'.format(key, urllib.parse.quote(str(params[key]), safe='-_.~', encoding='utf-8')) for key in sorted(params)]
         request_desc = '&'.join(pairs)
 
         sig_data = '{verb}\n{dom}\n{uri}\n{req}'.format(verb=method, dom=self._domain.lower(), uri=self._uri, req=request_desc)
@@ -101,22 +103,21 @@ class MWSCall:
         return url
 
     def __getattr__(self, name):
-        return MWSCall(self._access_key, self._secret_key, self._account_id, region=self._region,
-                       auth_token=self._auth_token, action=name, uri=self._uri, version=self._version,
-                       account_type=self._account_type, user_agent=self._user_agent)
+        return partial(self._do_api_call, name)
 
-    def __call__(self, **kwargs):
+    def _do_api_call(self, operation, **kwargs):
         extra_headers = {}
 
+        # If body is provided, include an MD5 signature in the header
         body = kwargs.pop('body', None)
         if body:
             md = b64encode(md5(body.encode()).digest()).strip(b'\n')
             extra_headers = {'Content-MD5': md, 'Content-Type': 'text/xml'}
 
         headers = self.build_headers(**extra_headers)
-        url = self.build_request_url('POST', self._action, **kwargs)
+        url = self.build_request_url('POST', operation, **kwargs)
 
-        return self.make_request('POST', url, data=body, headers=headers)
+        return self._make_request('POST', url, data=body, headers=headers)
 
     def build_headers(self, **kwargs):
         """Return a dictionary with header information."""
@@ -132,9 +133,7 @@ class MWSCall:
             msg = 'Invalid market: {}. Recognized values are {}.'.format(market, ', '.join(MARKETIDS.keys()))
             raise MWSError(msg)
 
-
     def enumerate_param(self, root, values):
-
         if root == 'MarketplaceId':
             ptype = 'Id'
         else:
@@ -151,9 +150,9 @@ class MWSCall:
 
         return params
 
-    def make_request(self, method, url, data='', headers={}):
-        """Return a requests response object for the the given request."""
-        return requests.request(method, url, data=data, headers=headers)
+    def set_request_function(self, func=None):
+        """Set the function that receives the URL and header information. Defaults to requests.request()."""
+        self._make_request = func or requests.request
 
 
 class Feeds(MWSCall):

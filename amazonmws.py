@@ -14,11 +14,24 @@ from hashlib import sha256, md5
 from time import strftime, gmtime
 
 
-ENDPOINTS = {'NA': 'mws.amazonservices.com',
-             'EU': 'mws-eu.amazonservices.com',
-             'IN': 'mws.amazonservices.in',
-             'CN': 'mws.amazonservices.com.cn',
-             'JP': 'mws.amazonservices.jp'}
+ENDPOINTS_MWS = {'NA': 'mws.amazonservices.com',
+                 'EU': 'mws-eu.amazonservices.com',
+                 'IN': 'mws.amazonservices.in',
+                 'CN': 'mws.amazonservices.com.cn',
+                 'JP': 'mws.amazonservices.jp'}
+
+ENDPOINTS_PA = {'BR': 'webservices.amazon.com.br',
+                'CN': 'webservices.amazon.cn',
+                'CA': 'webservices.amazon.ca',
+                'DE': 'webservices.amazon.de',
+                'ES': 'webservices.amazon.es',
+                'FR': 'webservices.amazon.fr',
+                'IN': 'webservices.amazon.in',
+                'IT': 'webservices.amazon.it',
+                'JP': 'webservices.amazon.co.jp',
+                'MX': 'webservices.amazon.com.mx',
+                'UK': 'webservices.amazon.co.uk',
+                'US': 'webservices.amazon.com'}
 
 MARKETIDS = {'CA': 'A2EUQ1WTGCTBG2',
              'MX': 'A1AM78C64UM0Y8',
@@ -37,7 +50,7 @@ class MWSError(Exception):
     pass
 
 
-class MWSCall:
+class AmzCall:
     """ Base class for the MWS API.
 
     Handles building requests to send to Amazon."""
@@ -45,15 +58,16 @@ class MWSCall:
     URI = '/'
     VERSION = '2009-01-01'
     ACCOUNT_TYPE = 'SellerId'
+    ACTION_TYPE = 'Action'
     USER_AGENT = 'amazonmws/0.0.1 (Language=Python)'
-    DEFAULT_MARKET = 'US'
 
-    def __init__(self, access_key, secret_key, account_id, region='NA', auth_token='',
+    def __init__(self, access_key, secret_key, account_id, region='NA', auth_token='', default_market='US',
                  uri='', version='', account_type='', user_agent='', make_request=None):
         self._access_key = access_key
         self._secret_key = secret_key
         self._account_id = account_id
         self._region = region
+        self._default_market = default_market
         self._auth_token = auth_token
         self._uri = uri or self.URI
         self._version = version or self.VERSION
@@ -62,17 +76,17 @@ class MWSCall:
         self.set_request_function(make_request)
 
         try:
-            self._domain = ENDPOINTS[region]
+            self._domain = ENDPOINTS_MWS[region]
         except KeyError:
-            msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(ENDPOINTS.keys()))
+            msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(ENDPOINTS_MWS.keys()))
             raise MWSError(msg)
 
     def build_request_url(self, method, action, **kwargs):
         """Return a properly formatted and signed request URL based on the given parameters."""
 
         params = {'AWSAccessKeyId': self._access_key,
-                  'Action': action,
-                  self._account_type: self._account_id,
+                  self.ACTION_TYPE: action,
+                  self.ACCOUNT_TYPE: self._account_id,
                   'SignatureMethod': 'HmacSHA256',
                   'SignatureVersion': '2',
                   'Timestamp': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
@@ -128,7 +142,7 @@ class MWSCall:
     def market_id(self, market=''):
         """Return the Amazon Market ID for the given market."""
         try:
-            return MARKETIDS[market or self.DEFAULT_MARKET]
+            return MARKETIDS[market or self._default_market]
         except KeyError:
             msg = 'Invalid market: {}. Recognized values are {}.'.format(market, ', '.join(MARKETIDS.keys()))
             raise MWSError(msg)
@@ -155,67 +169,104 @@ class MWSCall:
         self._make_request = func or requests.request
 
 
-class Feeds(MWSCall):
+class Feeds(AmzCall):
     """Interface to the Feeds section of the MWS API."""
     URI = '/'
     VERSION = '2009-01-01'
 
-class Finances(MWSCall):
+
+class Finances(AmzCall):
     """Interface to the Finances section of the API."""
     URI = '/Finances/2015-05-01'
     VERSION = '2015-05-01'
 
-class Products(MWSCall):
+
+class Products(AmzCall):
     """Interface to the Products section of the MWS API."""
     URI = '/Products/2011-10-01'
     VERSION = '2011-10-01'
 
-class FulfillmentInboundShipment(MWSCall):
+
+class FulfillmentInboundShipment(AmzCall):
     """Interface to the Fulfillment Inbound Shipment section of the API."""
     URI = '/FulfillmentInboundShipment/2010-10-01'
     VERSION = '2010-10-01'
 
-class FulfillmentInventory(MWSCall):
+
+class FulfillmentInventory(AmzCall):
     """Interface to the Fulfillment Inventory section of the API."""
     URI = '/FulfillmentInventory/2010-10-01'
     VERSION = '2010-10-01'
 
-class FulfillmentOutboundShipment(MWSCall):
+
+class FulfillmentOutboundShipment(AmzCall):
     """Interface to the Fulfillment Outbound Shipment section of the API."""
     URI = '/FulfillmentOutboundShipment/2010-10-01'
     VERSION = '2010-10-01'
 
-class MerchantFulfillment(MWSCall):
+
+class MerchantFulfillment(AmzCall):
     """Interface to the Merchant Fulfillment section of the API."""
     URI = '/MerchantFulfillment/2015-06-01'
     VERSION = '2015-06-01'
 
-class Orders(MWSCall):
+
+class Orders(AmzCall):
     """Interface to the Orders section of the API."""
     URI = '/Orders/2013-09-01'
     VERSION = '2013-09-01'
 
-class Products(MWSCall):
+
+class Products(AmzCall):
     """Interface to the Products section of the API."""
     URI = '/Products/2011-10-01'
     VERSION = '2011-10-01'
 
-class Recommendations(MWSCall):
+
+class Recommendations(AmzCall):
     """Interface to the Recommendations section of the API."""
     URI = '/Recommendations/2013-04-01'
     VERSION = '2013-04-01'
 
-class Reports(MWSCall):
+
+class Reports(AmzCall):
     """Interface to the Reports section of the API."""
     URI = '/'
     VERSION ='2009-01-01'
 
-class Sellers(MWSCall):
+
+class Sellers(AmzCall):
     """Interface to the Sellers section of the API."""
     URI = '/Sellers'
     VERSION = '2011-07-01'
 
-class Subscriptions(MWSCall):
+
+class Subscriptions(AmzCall):
     """Interface to the Subscriptions section of the API."""
     URI = '/Subscriptions/2013-07-01'
     VERSION = '2013-07-01'
+
+
+class ProductAdvertising(AmzCall):
+    """Interface to the Product Advertising API."""
+    URI = '/onca/xml'
+    VERSION = ''
+    ACCOUNT_TYPE = 'AssociateTag'
+    ACTION_TYPE = 'Operation'
+
+    def __init__(self, access_key, secret_key, account_id, **kwargs):
+        region = kwargs.pop('region', 'US')
+        super(ProductAdvertising, self).__init__(access_key, secret_key, account_id, **kwargs)
+
+        try:
+            self._domain = ENDPOINTS_PA[region]
+        except KeyError:
+            msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(ENDPOINTS_PA.keys()))
+            raise MWSError(msg)
+
+    def _api_call(self, operation, **kwargs):
+        kwargs['Service'] = 'AWSECommerceService'
+        headers = self.build_headers()
+        url = self.build_request_url('GET', operation, **kwargs)
+
+        return self._make_request('GET', url, headers=headers)

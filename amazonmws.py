@@ -5,7 +5,6 @@
 #
 
 import hmac
-import requests
 import urllib
 
 from base64 import b64encode
@@ -166,7 +165,7 @@ class AmzCall:
 
     def set_request_function(self, func=None):
         """Set the function that receives the URL and header information. Defaults to requests.request()."""
-        self._make_request = func or requests.request
+        self._make_request = func or print
 
 
 class Feeds(AmzCall):

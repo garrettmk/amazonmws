@@ -164,7 +164,7 @@ class AmzCall:
         return params
 
     def set_request_function(self, func=None):
-        """Set the function that receives the URL and header information. Defaults to requests.request()."""
+        """Set the function that receives the URL and header information. Defaults to print()."""
         self._make_request = func or print
 
 

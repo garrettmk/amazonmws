@@ -13,6 +13,7 @@ from hashlib import sha256, md5
 from time import strftime, gmtime
 
 
+
 ENDPOINTS_MWS = {'NA': 'mws.amazonservices.com',
                  'EU': 'mws-eu.amazonservices.com',
                  'IN': 'mws.amazonservices.in',
@@ -72,7 +73,7 @@ class AmzCall:
         self._version = version or self.VERSION
         self._account_type = account_type or self.ACCOUNT_TYPE
         self._user_agent = user_agent or self.USER_AGENT
-        self.set_request_function(make_request)
+        self.make_request = self._dummy_request_function
 
         try:
             self._domain = ENDPOINTS_MWS[region]
@@ -130,7 +131,7 @@ class AmzCall:
         headers = self.build_headers(**extra_headers)
         url = self.build_request_url('POST', operation, **kwargs)
 
-        return self._make_request('POST', url, data=body, headers=headers)
+        return self._make_request(method='POST', url=url, data=body, headers=headers)
 
     def build_headers(self, **kwargs):
         """Return a dictionary with header information."""
@@ -157,15 +158,25 @@ class AmzCall:
         for num, val in enumerate(values, start=1):
             base = '{}.{}.{}'.format(root, ptype, num)
             if isinstance(val, dict):
-                params.update({'{}.{}'.format(base, k):v for k,v in val.items()})
+                params.update({'{}.{}'.format(base, k):str(v) for k,v in val.items()})
             else:
                 params.update({base:val})
 
         return params
 
-    def set_request_function(self, func=None):
-        """Set the function that receives the URL and header information. Defaults to print()."""
-        self._make_request = func or print
+    def _dummy_request_function(self, *args, **kwargs):
+        """Dummy request function."""
+        print(args, kwargs)
+
+    @property
+    def make_request(self):
+        return self._make_request
+
+    @make_request.setter
+    def make_request(self, func):
+        if not callable(func):
+            raise TypeError('Expected callable object, got %s' % type(func))
+        self._make_request = func
 
 
 class Feeds(AmzCall):

@@ -1,7 +1,8 @@
 import time
 import collections
 
-from amazonmws import AmzCall
+from functools import partial
+from api import AmzCall
 
 
 ThrottleLimits = collections.namedtuple('ThrottleLimits', ['quota_max', 'restore_rate', 'hourly_max'])
@@ -19,18 +20,24 @@ class Throttler:
         quota for a particular request."""
         self._quota_level = {}
         self._last_quota_update = {}
+        self._priority_max = {}
         self._blocking = blocking
         self._api = api
 
-    def _pre_request(self, action):
+    def _pre_request(self, action, **kwargs):
         """Updates the quota for the specified action. If blocking=True, this method will sleep() if necessary
         before passing allowing the request to continue."""
+        priority = kwargs.pop('priority', 0)
+
         if self._blocking:
-            time.sleep(self.request_wait(action))
+            time.sleep(self.request_wait(action, priority))
         else:
             self._update_quota(action)
 
         self._quota_level[action] = self._quota_level.get(action, 0) + 1
+
+        if self._api:
+            return self._api.__getattr__(action)(**kwargs)
 
     def _update_quota(self, action):
         """Restore the quota as needed, based on the elapsed time since this method was last called."""
@@ -48,7 +55,7 @@ class Throttler:
         self._quota_level[action] = max(quota_level - (now - last_update) // restore_rate, 0)
         self._last_quota_update[action] = now
 
-    def request_wait(self, action):
+    def request_wait(self, action, priority=0):
         """Return the number of seconds to wait before there is room in the quota for action."""
         try:
             LIMITS[action]
@@ -57,8 +64,21 @@ class Throttler:
             return 0
 
         self._update_quota(action)
-        wait = max(self._quota_level[action] + 1 - LIMITS[action].quota_max, 0) * LIMITS[action].restore_rate
+
+        quota_max = sum(self._priority_max.get(action, [])[:priority + 1])
+        quota_max = quota_max if quota_max else LIMITS[action].quota_max
+
+        wait = max(self._quota_level[action] + 1 - quota_max, 0) * LIMITS[action].restore_rate
         return wait
+
+    def set_priority_quota(self, action, priority, quota):
+        """Reserve part of an action's quota for the specified priority."""
+        self._priority_max[action] = self._priority_max.get(action, [])
+
+        if priority + 1 > len(self._priority_max[action]):
+            self._priority_max[action].extend([0 for i in range(priority + 1 - len(self._priority_max[action]))])
+
+        self._priority_max[action][priority] = quota
 
     @property
     def api(self):
@@ -79,8 +99,5 @@ class Throttler:
         self._blocking = bool(value)
 
     def __getattr__(self, action):
-        self._pre_request(action)
-
-        if self._api:
-            return eval('self._api.%s' % action)
+        return partial(self._pre_request, action)
 

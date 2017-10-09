@@ -2,12 +2,15 @@ import time
 import collections
 
 from functools import partial
-from api import AmzCall
+from .api import AmzCall
 
 
 ThrottleLimits = collections.namedtuple('ThrottleLimits', ['quota_max', 'restore_rate', 'hourly_max'])
 
 LIMITS = {'ListMatchingProducts':           ThrottleLimits(20, 5, 720),
+          'GetMatchingProduct':             ThrottleLimits(20, 0.1, 7200),
+          'GetMatchingProductForId':        ThrottleLimits(20, 0.5, 7200),
+          'GetCompetitivePricingForSku':    ThrottleLimits(20, 0.1, 36000),
           'GetCompetitivePricingForAsin':   ThrottleLimits(20, 0.1, 36000),
           'GetMyFeesEstimate':              ThrottleLimits(20, 0.1, 36000)}
 

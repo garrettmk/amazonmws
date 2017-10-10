@@ -1,8 +1,14 @@
-#
-# An interface for building requests to Amazon's MWS API
-#
-# Based on python-amazon-mws: https://github.com/czpython/python-amazon-mws/
-#
+# -*- coding: utf-8 -*-
+
+"""
+:mod:`api` -- Implements the amazonmws API
+------------------------------------------
+
+.. module:: api
+
+Contains the implementation of the API and a few extras.
+"""
+
 
 import hmac
 import urllib
@@ -13,37 +19,45 @@ from hashlib import sha256, md5
 from time import strftime, gmtime
 
 
+#: A dictionary of endpoints for the MWS API, keyed by country code.
+MWS_ENDPOINT = {
+    'NA': 'mws.amazonservices.com',
+    'EU': 'mws-eu.amazonservices.com',
+    'IN': 'mws.amazonservices.in',
+    'CN': 'mws.amazonservices.com.cn',
+    'JP': 'mws.amazonservices.jp'
+}
 
-ENDPOINTS_MWS = {'NA': 'mws.amazonservices.com',
-                 'EU': 'mws-eu.amazonservices.com',
-                 'IN': 'mws.amazonservices.in',
-                 'CN': 'mws.amazonservices.com.cn',
-                 'JP': 'mws.amazonservices.jp'}
+#: A dictionary of endpoints for the Product Advertising API, keyed by country code.
+PA_ENDPOINT = {
+    'BR': 'webservices.amazon.com.br',
+    'CN': 'webservices.amazon.cn',
+    'CA': 'webservices.amazon.ca',
+    'DE': 'webservices.amazon.de',
+    'ES': 'webservices.amazon.es',
+    'FR': 'webservices.amazon.fr',
+    'IN': 'webservices.amazon.in',
+    'IT': 'webservices.amazon.it',
+    'JP': 'webservices.amazon.co.jp',
+    'MX': 'webservices.amazon.com.mx',
+    'UK': 'webservices.amazon.co.uk',
+    'US': 'webservices.amazon.com'
+}
 
-ENDPOINTS_PA = {'BR': 'webservices.amazon.com.br',
-                'CN': 'webservices.amazon.cn',
-                'CA': 'webservices.amazon.ca',
-                'DE': 'webservices.amazon.de',
-                'ES': 'webservices.amazon.es',
-                'FR': 'webservices.amazon.fr',
-                'IN': 'webservices.amazon.in',
-                'IT': 'webservices.amazon.it',
-                'JP': 'webservices.amazon.co.jp',
-                'MX': 'webservices.amazon.com.mx',
-                'UK': 'webservices.amazon.co.uk',
-                'US': 'webservices.amazon.com'}
-
-MARKETIDS = {'CA': 'A2EUQ1WTGCTBG2',
-             'MX': 'A1AM78C64UM0Y8',
-             'US': 'ATVPDKIKX0DER',
-             'DE': 'A1PA6795UKMFR9',
-             'ES': 'A1RKKUPIHCS9HS',
-             'FR': 'A13V1IB3VIYZZH',
-             'IT': 'APJ6JRA9NG5V4',
-             'UK': 'A1F83G8C2ARO7P',
-             'IN': 'A21TJRUUN4KGV',
-             'JP': 'A21TJRUUN4KGV',
-             'CN': 'AAHKV2X7AFYLW'}
+#: A dictionary of Amazon market IDs, keyed by country code.
+MARKETID = {
+    'CA': 'A2EUQ1WTGCTBG2',
+    'MX': 'A1AM78C64UM0Y8',
+    'US': 'ATVPDKIKX0DER',
+    'DE': 'A1PA6795UKMFR9',
+    'ES': 'A1RKKUPIHCS9HS',
+    'FR': 'A13V1IB3VIYZZH',
+    'IT': 'APJ6JRA9NG5V4',
+    'UK': 'A1F83G8C2ARO7P',
+    'IN': 'A21TJRUUN4KGV',
+    'JP': 'A21TJRUUN4KGV',
+    'CN': 'AAHKV2X7AFYLW'
+}
 
 
 class MWSError(Exception):
@@ -51,9 +65,8 @@ class MWSError(Exception):
 
 
 class AmzCall:
-    """ Base class for the MWS API.
-
-    Handles building requests to send to Amazon."""
+    """Base class for API objects. Handles building and signing requests.
+    """
 
     URI = '/'
     VERSION = '2009-01-01'
@@ -76,9 +89,9 @@ class AmzCall:
         self.make_request = self._dummy_request_function
 
         try:
-            self._domain = ENDPOINTS_MWS[region]
+            self._domain = MWS_ENDPOINT[region]
         except KeyError:
-            msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(ENDPOINTS_MWS.keys()))
+            msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(MWS_ENDPOINT.keys()))
             raise MWSError(msg)
 
     def build_request_url(self, method, action, **kwargs):
@@ -142,9 +155,9 @@ class AmzCall:
     def market_id(self, market=''):
         """Return the Amazon Market ID for the given market."""
         try:
-            return MARKETIDS[market or self._default_market]
+            return MARKETID[market or self._default_market]
         except KeyError:
-            msg = 'Invalid market: {}. Recognized values are {}.'.format(market, ', '.join(MARKETIDS.keys()))
+            msg = 'Invalid market: {}. Recognized values are {}.'.format(market, ', '.join(MARKETID.keys()))
             raise MWSError(msg)
 
     def enumerate_param(self, root, values):
@@ -269,9 +282,9 @@ class ProductAdvertising(AmzCall):
         super(ProductAdvertising, self).__init__(access_key, secret_key, account_id, **kwargs)
 
         try:
-            self._domain = ENDPOINTS_PA[region]
+            self._domain = PA_ENDPOINT[region]
         except KeyError:
-            msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(ENDPOINTS_PA.keys()))
+            msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(PA_ENDPOINT.keys()))
             raise MWSError(msg)
 
     def _api_call(self, operation, **kwargs):

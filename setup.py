@@ -8,7 +8,7 @@ def readme():
 
 setup(name='amazonmws',
       version='0.1',
-      description='Tools for communicating with Amazon\'s Merchant Web Services (MWS) and Product Advertising (PA) APIs.',
+      description='Tools for communicating with Amazon\'s Merchant Web Services (MWS) API.',
       long_description=readme(),
       url='https://github.com/garrettmk/amazonmws',
       author='Garrett Myrick',

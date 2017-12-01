@@ -12,6 +12,7 @@ Contains the implementation of the API and a few extras.
 
 import hmac
 import urllib
+import json
 
 from base64 import b64encode
 from functools import partial
@@ -74,6 +75,16 @@ class AmzCall:
     ACTION_TYPE = 'Action'
     USER_AGENT = 'amazonmws/0.0.1 (Language=Python)'
 
+    @classmethod
+    def from_json_keyfile(cls, path, **kwargs):
+        """Creates an API object using keys in the file at :path:. Addition keyword arguments are passed to the API
+         object's __init__() method.
+         """
+        with open(path) as file:
+            keys = json.load(file)
+
+        return cls(**keys, **kwargs)
+
     def __init__(self, access_key, secret_key, account_id, region='NA', auth_token='', default_market='US',
                  uri='', version='', account_type='', user_agent='', make_request=None):
         self._access_key = access_key
@@ -86,7 +97,7 @@ class AmzCall:
         self._version = version or self.VERSION
         self._account_type = account_type or self.ACCOUNT_TYPE
         self._user_agent = user_agent or self.USER_AGENT
-        self.make_request = self._dummy_request_function
+        self.make_request = make_request or self._dummy_request_function
 
         try:
             self._domain = MWS_ENDPOINT[region]
@@ -121,7 +132,12 @@ class AmzCall:
         sig_data = '{verb}\n{dom}\n{uri}\n{req}'.format(verb=method, dom=self._domain.lower(), uri=self._uri, req=request_desc)
 
         # Create the signature
-        signature = b64encode(hmac.new(self._secret_key.encode(), sig_data.encode(), sha256).digest())
+        signature = b64encode(
+            hmac.new(
+                self._secret_key.encode(), sig_data.encode(), sha256
+            ).digest()
+        )
+
         signature = urllib.parse.quote(signature.decode(), safe='')
 
         # Create the URL

@@ -17,7 +17,7 @@ LIMITS = {'ListMatchingProducts':           ThrottleLimits(20, 5, 720),
 
 class Throttler:
 
-    def __init__(self, api=None, blocking=False):
+    def __init__(self, api=None, blocking=True):
         """Initialize the Throttler object. If an api is provided, it's request function is set to the Throttler's
         request function. If blocking is set to True, sleep() will be called as-needed to keep from going over the
         quota for a particular request."""

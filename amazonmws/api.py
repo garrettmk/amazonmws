@@ -21,7 +21,7 @@ from time import strftime, gmtime
 
 
 #: A dictionary of endpoints for the MWS API, keyed by country code.
-MWS_ENDPOINT = {
+MWS_DOMAINS = {
     'NA': 'mws.amazonservices.com',
     'EU': 'mws-eu.amazonservices.com',
     'IN': 'mws.amazonservices.in',
@@ -61,10 +61,6 @@ MARKETID = {
 }
 
 
-class MWSError(Exception):
-    pass
-
-
 class AmzCall:
     """Base class for API objects. Handles building and signing requests.
     """
@@ -75,108 +71,30 @@ class AmzCall:
     ACTION_TYPE = 'Action'
     USER_AGENT = 'amazonmws/0.0.1 (Language=Python)'
 
-    @classmethod
-    def from_json_keyfile(cls, path, **kwargs):
-        """Creates an API object using keys in the file at :path:. Addition keyword arguments are passed to the API
-         object's __init__() method.
-         """
-        with open(path) as file:
-            keys = json.load(file)
+    def __init__(self, access_key, secret_key, seller_id, auth_token=None, domain='NA', default_market='US', make_request=None):
+        """Initialize the AmzCall object."""
 
-        return cls(**keys, **kwargs)
+        if None in (access_key, secret_key, seller_id):
+            raise ValueError('access_key, secret_key, or seller_id can not be None.')
 
-    def __init__(self, access_key, secret_key, account_id, region='NA', auth_token='', default_market='US',
-                 uri='', version='', account_type='', user_agent='', make_request=None):
+        if len(default_market) == 2 and default_market not in MARKETID:
+            good_ids = ', '.join(MARKETID.keys())
+            raise ValueError(f'Invalid market designation: {default_market}. Recognized values are {good_ids}.')
+
+        if len(domain) == 2 and domain not in MWS_DOMAINS:
+            raise ValueError(f'Invalid region: {domain}. Recognized values are {", ".join(MWS_DOMAINS.keys())}.')
+
         self._access_key = access_key
         self._secret_key = secret_key
-        self._account_id = account_id
-        self._region = region
-        self._default_market = default_market
+        self._account_id = seller_id
         self._auth_token = auth_token
-        self._uri = uri or self.URI
-        self._version = version or self.VERSION
-        self._account_type = account_type or self.ACCOUNT_TYPE
-        self._user_agent = user_agent or self.USER_AGENT
-        self.make_request = make_request or self._dummy_request_function
+        self._domain = MWS_DOMAINS[domain] if len(domain) == 2 else domain
+        self._default_market = MARKETID[default_market] if len(default_market) == 2 else default_market
+        self.make_request = make_request or print
 
-        try:
-            self._domain = MWS_ENDPOINT[region]
-        except KeyError:
-            msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(MWS_ENDPOINT.keys()))
-            raise MWSError(msg)
-
-    def build_request_url(self, method, action, **kwargs):
-        """Return a properly formatted and signed request URL based on the given parameters."""
-
-        params = {'AWSAccessKeyId': self._access_key,
-                  self.ACTION_TYPE: action,
-                  self.ACCOUNT_TYPE: self._account_id,
-                  'SignatureMethod': 'HmacSHA256',
-                  'SignatureVersion': '2',
-                  'Timestamp': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
-                  'Version': self._version}
-
-        if self._auth_token:
-            params['MWSAuthToken'] = self._auth_token
-
-        for k, v in kwargs.items():
-            if k.endswith('List') or k.startswith('List'):
-                params.update(self.enumerate_param(k, v))
-            elif v:
-                params.update({k:v})
-
-        # Create the string to sign
-        pairs = ['{}={}'.format(key, urllib.parse.quote(str(params[key]), safe='-_.~', encoding='utf-8')) for key in sorted(params)]
-        request_desc = '&'.join(pairs)
-
-        sig_data = '{verb}\n{dom}\n{uri}\n{req}'.format(verb=method, dom=self._domain.lower(), uri=self._uri, req=request_desc)
-
-        # Create the signature
-        signature = b64encode(
-            hmac.new(
-                self._secret_key.encode(), sig_data.encode(), sha256
-            ).digest()
-        )
-
-        signature = urllib.parse.quote(signature.decode(), safe='')
-
-        # Create the URL
-        url = 'https://{dom}{uri}?{req}&Signature={sig}'.format(dom=self._domain, uri=self._uri, req=request_desc, sig=signature)
-
-        return url
-
-    def __getattr__(self, name):
-        return partial(self._do_api_call, name)
-
-    def _do_api_call(self, operation, **kwargs):
-        extra_headers = {}
-
-        # If body is provided, include an MD5 signature in the header
-        body = kwargs.pop('body', None)
-        if body:
-            md = b64encode(md5(body.encode()).digest()).strip(b'\n')
-            extra_headers = {'Content-MD5': md, 'Content-Type': 'text/xml'}
-
-        headers = self.build_headers(**extra_headers)
-        url = self.build_request_url('POST', operation, **kwargs)
-
-        return self._make_request(method='POST', url=url, data=body, headers=headers)
-
-    def build_headers(self, **kwargs):
-        """Return a dictionary with header information."""
-        headers = {'User-Agent': self._user_agent}
-        headers.update(kwargs)
-        return headers
-
-    def market_id(self, market=''):
-        """Return the Amazon Market ID for the given market."""
-        try:
-            return MARKETID[market or self._default_market]
-        except KeyError:
-            msg = 'Invalid market: {}. Recognized values are {}.'.format(market, ', '.join(MARKETID.keys()))
-            raise MWSError(msg)
-
-    def enumerate_param(self, root, values):
+    @staticmethod
+    def enumerate_param(root, values):
+        """Formats a list of values into a parameter list acceptable to MWS."""
         if root == 'MarketplaceId':
             ptype = 'Id'
         else:
@@ -193,9 +111,85 @@ class AmzCall:
 
         return params
 
-    def _dummy_request_function(self, *args, **kwargs):
-        """Dummy request function."""
-        print(args, kwargs)
+    def build_request_params(self, action, **kwargs):
+        """Return a dict populated with request parameters."""
+
+        params = {
+            'AWSAccessKeyId': self._access_key,
+             self.ACTION_TYPE: action,
+             self.ACCOUNT_TYPE: self._account_id,
+             'SignatureMethod': 'HmacSHA256',
+             'SignatureVersion': '2',
+             'Timestamp': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
+             'Version': self.VERSION
+        }
+
+        if self._auth_token:
+            params['MWSAuthToken'] = self._auth_token
+
+        for k, v in kwargs.items():
+            if k.endswith('List') or k.startswith('List'):
+                params.update(self.enumerate_param(k, v))
+            elif v:
+                params.update({k: v})
+
+        quoted_params = {key:
+            urllib.parse.quote(
+                str(value),
+                safe='-_.~',
+                encoding='utf-8'
+            ) for key, value in params.items()
+        }
+
+        return '&'.join((f'{key}={quoted_params[key]}' for key in sorted(quoted_params)))
+
+    def build_request_url(self, method, action, **kwargs):
+        """Return a properly formatted and signed request URL based on the given parameters."""
+        params = self.build_request_params(action, **kwargs)
+
+        string_to_sign = '\n'.join((
+            method.upper(),
+            self._domain.lower(),
+            self.URI, params
+        ))
+
+        # Create the signature
+        signature = b64encode(
+            hmac.new(
+                self._secret_key.encode(), string_to_sign.encode(), sha256
+            ).digest()
+        )
+
+        signature = urllib.parse.quote(signature.decode(), safe='')
+
+        # Create the URL
+        return f'https://{self._domain}{self.URI}?{params}&Signature={signature}'
+
+    def __getattr__(self, name):
+        return partial(self._do_api_call, name)
+
+    def _do_api_call(self, operation, **kwargs):
+        headers = {
+            'User-Agent': self.USER_AGENT
+        }
+
+        # If body is provided, include an MD5 signature in the header
+        body = kwargs.pop('body', None)
+        if body:
+            md = b64encode(
+                md5(
+                    body.encode()
+                ).digest()
+            ).strip(b'\n')
+
+            headers.update({
+                'Content-MD5': md,
+                'Content-Type': 'text/xml'
+            })
+
+        url = self.build_request_url('POST', operation, **kwargs)
+
+        return self._make_request(method='POST', url=url, data=body, headers=headers)
 
     @property
     def make_request(self):
@@ -300,8 +294,7 @@ class ProductAdvertising(AmzCall):
         try:
             self._domain = PA_ENDPOINT[region]
         except KeyError:
-            msg = 'Invalid region: {}. Recognized values are {}.'.format(region, ', '.join(PA_ENDPOINT.keys()))
-            raise MWSError(msg)
+            raise ValueError(f'Invalid region: {region}. Recognized values are {", ".join(PA_ENDPOINT.keys())}')
 
     def _api_call(self, operation, **kwargs):
         kwargs['Service'] = 'AWSECommerceService'

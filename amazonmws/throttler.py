@@ -12,6 +12,71 @@ DEFAULT_LIMITS = {
         'restore_rate': 5,
         'hourly_max': 720
     },
+    'GetMatchingProduct': {
+        'quota_max': 20,
+        'restore_rate': 0.5,
+        'hourly_max': 7200
+    },
+    'GetMatchingProductForId': {
+        'quota_max': 20,
+        'restore_rate': 0.2,
+        'hourly_max': 18000,
+    },
+    'GetCompetitivePricingForSKU': {
+        'quota_max': 20,
+        'restore_rate': 0.1,
+        'hourly_max': 36000
+    },
+    'GetCompetitivePricingForASIN': {
+        'quota_max': 20,
+        'restore_rate': 0.1,
+        'hourly_max': 36000
+    },
+    'GetLowestOfferListingsForSKU': {
+        'quota_max': 20,
+        'restore_rate': 0.1,
+        'hourly_max': 36000
+    },
+    'GetLowestOfferListingsForASIN': {
+        'quota_max': 20,
+        'restore_rate': 0.1,
+        'hourly_max': 36000
+    },
+    'GetLowestPricedOffersForSKU': {
+        'quota_max': 10,
+        'restore_rate': 0.2,
+        'hourly_max': 200
+    },
+    'GetLowestPriceOffersForASIN': {
+        'quota_max': 10,
+        'restore_rate': 0.2,
+        'hourly_max': 36000
+    },
+    'GetMyFeesEstimate': {
+        'quota_max': 20,
+        'restore_rate': 0.1,
+        'hourly_max': 36000
+    },
+    'GetMyPriceForSKU': {
+        'quota_max': 20,
+        'restore_rate': 0.1,
+        'hourly_max': 36000
+    },
+    'GetMyPriceForASIN': {
+        'quota_max': 20,
+        'restore_rate': 0.1,
+        'hourly_max': 36000
+    },
+    'GetProductCategoriesForSKU': {
+        'quota_max': 20,
+        'restore_rate': 5,
+        'hourly_max': 720
+    },
+    'GetProductCategoriesForASIN': {
+        'quota_max': 20,
+        'restore_rate': 5,
+        'hourly_max': 720
+    },
     'GetServiceStatus': {
         'quota_max': 2,
         'restore_rate': 300

@@ -10,6 +10,7 @@ TEST_CREDENTIALS = {
     'seller_id': 'a1b2c3d4e5f6'
 }
 
+
 @pytest.fixture()
 def amzcall_object():
     return AmzCall(**TEST_CREDENTIALS)

@@ -1,0 +1,482 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>amazonmws package &#8212; amazonmws 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="amazonmws-package">
+<h1>amazonmws package<a class="headerlink" href="#amazonmws-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-amazonmws.api">
+<span id="amazonmws-api-module"></span><h2>amazonmws.api module<a class="headerlink" href="#module-amazonmws.api" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-api">
+<span id="api-implements-the-amazonmws-api"></span><h3><a class="reference internal" href="#module-api" title="api"><code class="xref py py-mod docutils literal"><span class="pre">api</span></code></a> – Implements the amazonmws API<a class="headerlink" href="#module-api" title="Permalink to this headline">¶</a></h3>
+<p>Contains the implementation of the API and a few extras.</p>
+<dl class="class">
+<dt id="amazonmws.api.AmzCall">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">AmzCall</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#AmzCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.AmzCall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Base class for API objects. Handles building and signing requests.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.AmzCall.ACCOUNT_TYPE">
+<code class="descname">ACCOUNT_TYPE</code><em class="property"> = 'SellerId'</em><a class="headerlink" href="#amazonmws.api.AmzCall.ACCOUNT_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.AmzCall.ACTION_TYPE">
+<code class="descname">ACTION_TYPE</code><em class="property"> = 'Action'</em><a class="headerlink" href="#amazonmws.api.AmzCall.ACTION_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.AmzCall.URI">
+<code class="descname">URI</code><em class="property"> = '/'</em><a class="headerlink" href="#amazonmws.api.AmzCall.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.AmzCall.USER_AGENT">
+<code class="descname">USER_AGENT</code><em class="property"> = 'amazonmws/0.0.1 (Language=Python)'</em><a class="headerlink" href="#amazonmws.api.AmzCall.USER_AGENT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.AmzCall.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2009-01-01'</em><a class="headerlink" href="#amazonmws.api.AmzCall.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="amazonmws.api.AmzCall.build_headers">
+<code class="descname">build_headers</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#AmzCall.build_headers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.AmzCall.build_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary with header information.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="amazonmws.api.AmzCall.build_request_url">
+<code class="descname">build_request_url</code><span class="sig-paren">(</span><em>method</em>, <em>action</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#AmzCall.build_request_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.AmzCall.build_request_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a properly formatted and signed request URL based on the given parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="amazonmws.api.AmzCall.enumerate_param">
+<code class="descname">enumerate_param</code><span class="sig-paren">(</span><em>root</em>, <em>values</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#AmzCall.enumerate_param"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.AmzCall.enumerate_param" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.AmzCall.make_request">
+<code class="descname">make_request</code><a class="headerlink" href="#amazonmws.api.AmzCall.make_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="amazonmws.api.AmzCall.market_id">
+<code class="descname">market_id</code><span class="sig-paren">(</span><em>market=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#AmzCall.market_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.AmzCall.market_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Amazon Market ID for the given market.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.Feeds">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">Feeds</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#Feeds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.Feeds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Feeds section of the MWS API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.Feeds.URI">
+<code class="descname">URI</code><em class="property"> = '/'</em><a class="headerlink" href="#amazonmws.api.Feeds.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.Feeds.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2009-01-01'</em><a class="headerlink" href="#amazonmws.api.Feeds.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.Finances">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">Finances</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#Finances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.Finances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Finances section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.Finances.URI">
+<code class="descname">URI</code><em class="property"> = '/Finances/2015-05-01'</em><a class="headerlink" href="#amazonmws.api.Finances.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.Finances.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2015-05-01'</em><a class="headerlink" href="#amazonmws.api.Finances.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.FulfillmentInboundShipment">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">FulfillmentInboundShipment</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#FulfillmentInboundShipment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.FulfillmentInboundShipment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Fulfillment Inbound Shipment section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.FulfillmentInboundShipment.URI">
+<code class="descname">URI</code><em class="property"> = '/FulfillmentInboundShipment/2010-10-01'</em><a class="headerlink" href="#amazonmws.api.FulfillmentInboundShipment.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.FulfillmentInboundShipment.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2010-10-01'</em><a class="headerlink" href="#amazonmws.api.FulfillmentInboundShipment.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.FulfillmentInventory">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">FulfillmentInventory</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#FulfillmentInventory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.FulfillmentInventory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Fulfillment Inventory section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.FulfillmentInventory.URI">
+<code class="descname">URI</code><em class="property"> = '/FulfillmentInventory/2010-10-01'</em><a class="headerlink" href="#amazonmws.api.FulfillmentInventory.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.FulfillmentInventory.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2010-10-01'</em><a class="headerlink" href="#amazonmws.api.FulfillmentInventory.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.FulfillmentOutboundShipment">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">FulfillmentOutboundShipment</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#FulfillmentOutboundShipment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.FulfillmentOutboundShipment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Fulfillment Outbound Shipment section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.FulfillmentOutboundShipment.URI">
+<code class="descname">URI</code><em class="property"> = '/FulfillmentOutboundShipment/2010-10-01'</em><a class="headerlink" href="#amazonmws.api.FulfillmentOutboundShipment.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.FulfillmentOutboundShipment.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2010-10-01'</em><a class="headerlink" href="#amazonmws.api.FulfillmentOutboundShipment.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="amazonmws.api.MARKETID">
+<code class="descclassname">amazonmws.api.</code><code class="descname">MARKETID</code><em class="property"> = {'CA': 'A2EUQ1WTGCTBG2', 'MX': 'A1AM78C64UM0Y8', 'US': 'ATVPDKIKX0DER', 'DE': 'A1PA6795UKMFR9', 'ES': 'A1RKKUPIHCS9HS', 'FR': 'A13V1IB3VIYZZH', 'IT': 'APJ6JRA9NG5V4', 'UK': 'A1F83G8C2ARO7P', 'IN': 'A21TJRUUN4KGV', 'JP': 'A21TJRUUN4KGV', 'CN': 'AAHKV2X7AFYLW'}</em><a class="headerlink" href="#amazonmws.api.MARKETID" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dictionary of Amazon market IDs, keyed by country code.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="amazonmws.api.MWSError">
+<em class="property">exception </em><code class="descclassname">amazonmws.api.</code><code class="descname">MWSError</code><a class="reference internal" href="_modules/amazonmws/api.html#MWSError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.MWSError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="amazonmws.api.MWS_ENDPOINT">
+<code class="descclassname">amazonmws.api.</code><code class="descname">MWS_ENDPOINT</code><em class="property"> = {'NA': 'mws.amazonservices.com', 'EU': 'mws-eu.amazonservices.com', 'IN': 'mws.amazonservices.in', 'CN': 'mws.amazonservices.com.cn', 'JP': 'mws.amazonservices.jp'}</em><a class="headerlink" href="#amazonmws.api.MWS_ENDPOINT" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dictionary of endpoints for the MWS API, keyed by country code.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.MerchantFulfillment">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">MerchantFulfillment</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#MerchantFulfillment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.MerchantFulfillment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Merchant Fulfillment section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.MerchantFulfillment.URI">
+<code class="descname">URI</code><em class="property"> = '/MerchantFulfillment/2015-06-01'</em><a class="headerlink" href="#amazonmws.api.MerchantFulfillment.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.MerchantFulfillment.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2015-06-01'</em><a class="headerlink" href="#amazonmws.api.MerchantFulfillment.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.Orders">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">Orders</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#Orders"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.Orders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Orders section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.Orders.URI">
+<code class="descname">URI</code><em class="property"> = '/Orders/2013-09-01'</em><a class="headerlink" href="#amazonmws.api.Orders.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.Orders.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2013-09-01'</em><a class="headerlink" href="#amazonmws.api.Orders.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="amazonmws.api.PA_ENDPOINT">
+<code class="descclassname">amazonmws.api.</code><code class="descname">PA_ENDPOINT</code><em class="property"> = {'BR': 'webservices.amazon.com.br', 'CN': 'webservices.amazon.cn', 'CA': 'webservices.amazon.ca', 'DE': 'webservices.amazon.de', 'ES': 'webservices.amazon.es', 'FR': 'webservices.amazon.fr', 'IN': 'webservices.amazon.in', 'IT': 'webservices.amazon.it', 'JP': 'webservices.amazon.co.jp', 'MX': 'webservices.amazon.com.mx', 'UK': 'webservices.amazon.co.uk', 'US': 'webservices.amazon.com'}</em><a class="headerlink" href="#amazonmws.api.PA_ENDPOINT" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dictionary of endpoints for the Product Advertising API, keyed by country code.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.ProductAdvertising">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">ProductAdvertising</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#ProductAdvertising"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.ProductAdvertising" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Product Advertising API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.ProductAdvertising.ACCOUNT_TYPE">
+<code class="descname">ACCOUNT_TYPE</code><em class="property"> = 'AssociateTag'</em><a class="headerlink" href="#amazonmws.api.ProductAdvertising.ACCOUNT_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.ProductAdvertising.ACTION_TYPE">
+<code class="descname">ACTION_TYPE</code><em class="property"> = 'Operation'</em><a class="headerlink" href="#amazonmws.api.ProductAdvertising.ACTION_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.ProductAdvertising.URI">
+<code class="descname">URI</code><em class="property"> = '/onca/xml'</em><a class="headerlink" href="#amazonmws.api.ProductAdvertising.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.ProductAdvertising.VERSION">
+<code class="descname">VERSION</code><em class="property"> = ''</em><a class="headerlink" href="#amazonmws.api.ProductAdvertising.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.Products">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">Products</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#Products"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.Products" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Products section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.Products.URI">
+<code class="descname">URI</code><em class="property"> = '/Products/2011-10-01'</em><a class="headerlink" href="#amazonmws.api.Products.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.Products.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2011-10-01'</em><a class="headerlink" href="#amazonmws.api.Products.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.Recommendations">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">Recommendations</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#Recommendations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.Recommendations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Recommendations section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.Recommendations.URI">
+<code class="descname">URI</code><em class="property"> = '/Recommendations/2013-04-01'</em><a class="headerlink" href="#amazonmws.api.Recommendations.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.Recommendations.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2013-04-01'</em><a class="headerlink" href="#amazonmws.api.Recommendations.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.Reports">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">Reports</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#Reports"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.Reports" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Reports section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.Reports.URI">
+<code class="descname">URI</code><em class="property"> = '/'</em><a class="headerlink" href="#amazonmws.api.Reports.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.Reports.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2009-01-01'</em><a class="headerlink" href="#amazonmws.api.Reports.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.Sellers">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">Sellers</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#Sellers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.Sellers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Sellers section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.Sellers.URI">
+<code class="descname">URI</code><em class="property"> = '/Sellers'</em><a class="headerlink" href="#amazonmws.api.Sellers.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.Sellers.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2011-07-01'</em><a class="headerlink" href="#amazonmws.api.Sellers.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.api.Subscriptions">
+<em class="property">class </em><code class="descclassname">amazonmws.api.</code><code class="descname">Subscriptions</code><span class="sig-paren">(</span><em>access_key</em>, <em>secret_key</em>, <em>account_id</em>, <em>region='NA'</em>, <em>auth_token=''</em>, <em>default_market='US'</em>, <em>uri=''</em>, <em>version=''</em>, <em>account_type=''</em>, <em>user_agent=''</em>, <em>make_request=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/api.html#Subscriptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.api.Subscriptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#amazonmws.api.AmzCall" title="amazonmws.api.AmzCall"><code class="xref py py-class docutils literal"><span class="pre">amazonmws.api.AmzCall</span></code></a></p>
+<p>Interface to the Subscriptions section of the API.</p>
+<dl class="attribute">
+<dt id="amazonmws.api.Subscriptions.URI">
+<code class="descname">URI</code><em class="property"> = '/Subscriptions/2013-07-01'</em><a class="headerlink" href="#amazonmws.api.Subscriptions.URI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.api.Subscriptions.VERSION">
+<code class="descname">VERSION</code><em class="property"> = '2013-07-01'</em><a class="headerlink" href="#amazonmws.api.Subscriptions.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-amazonmws.throttler">
+<span id="amazonmws-throttler-module"></span><h2>amazonmws.throttler module<a class="headerlink" href="#module-amazonmws.throttler" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="amazonmws.throttler.ThrottleLimits">
+<em class="property">class </em><code class="descclassname">amazonmws.throttler.</code><code class="descname">ThrottleLimits</code><span class="sig-paren">(</span><em>quota_max</em>, <em>restore_rate</em>, <em>hourly_max</em><span class="sig-paren">)</span><a class="headerlink" href="#amazonmws.throttler.ThrottleLimits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="amazonmws.throttler.ThrottleLimits.hourly_max">
+<code class="descname">hourly_max</code><a class="headerlink" href="#amazonmws.throttler.ThrottleLimits.hourly_max" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.throttler.ThrottleLimits.quota_max">
+<code class="descname">quota_max</code><a class="headerlink" href="#amazonmws.throttler.ThrottleLimits.quota_max" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.throttler.ThrottleLimits.restore_rate">
+<code class="descname">restore_rate</code><a class="headerlink" href="#amazonmws.throttler.ThrottleLimits.restore_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="amazonmws.throttler.Throttler">
+<em class="property">class </em><code class="descclassname">amazonmws.throttler.</code><code class="descname">Throttler</code><span class="sig-paren">(</span><em>api=None</em>, <em>blocking=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/throttler.html#Throttler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.throttler.Throttler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="amazonmws.throttler.Throttler.api">
+<code class="descname">api</code><a class="headerlink" href="#amazonmws.throttler.Throttler.api" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="amazonmws.throttler.Throttler.blocking">
+<code class="descname">blocking</code><a class="headerlink" href="#amazonmws.throttler.Throttler.blocking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="amazonmws.throttler.Throttler.request_wait">
+<code class="descname">request_wait</code><span class="sig-paren">(</span><em>action</em>, <em>priority=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/throttler.html#Throttler.request_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.throttler.Throttler.request_wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of seconds to wait before there is room in the quota for action.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="amazonmws.throttler.Throttler.set_priority_quota">
+<code class="descname">set_priority_quota</code><span class="sig-paren">(</span><em>action</em>, <em>priority</em>, <em>quota</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/amazonmws/throttler.html#Throttler.set_priority_quota"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#amazonmws.throttler.Throttler.set_priority_quota" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reserve part of an action’s quota for the specified priority.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-amazonmws">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-amazonmws" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">amazonmws</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Garrett Myrick.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/amazonmws.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

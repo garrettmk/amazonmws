@@ -12,7 +12,6 @@ Contains the implementation of the API and a few extras.
 
 import hmac
 import urllib
-import json
 
 from base64 import b64encode
 from functools import partial

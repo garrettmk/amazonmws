@@ -1,0 +1,396 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>amazonmws.api &#8212; amazonmws 0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for amazonmws.api</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:mod:`api` -- Implements the amazonmws API</span>
+<span class="sd">------------------------------------------</span>
+
+<span class="sd">.. module:: api</span>
+
+<span class="sd">Contains the implementation of the API and a few extras.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">hmac</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+
+<span class="kn">from</span> <span class="nn">base64</span> <span class="k">import</span> <span class="n">b64encode</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="k">import</span> <span class="n">sha256</span><span class="p">,</span> <span class="n">md5</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">strftime</span><span class="p">,</span> <span class="n">gmtime</span>
+
+
+<span class="c1">#: A dictionary of endpoints for the MWS API, keyed by country code.</span>
+<span class="n">MWS_ENDPOINT</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;NA&#39;</span><span class="p">:</span> <span class="s1">&#39;mws.amazonservices.com&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;EU&#39;</span><span class="p">:</span> <span class="s1">&#39;mws-eu.amazonservices.com&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;IN&#39;</span><span class="p">:</span> <span class="s1">&#39;mws.amazonservices.in&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CN&#39;</span><span class="p">:</span> <span class="s1">&#39;mws.amazonservices.com.cn&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;JP&#39;</span><span class="p">:</span> <span class="s1">&#39;mws.amazonservices.jp&#39;</span>
+<span class="p">}</span>
+
+<span class="c1">#: A dictionary of endpoints for the Product Advertising API, keyed by country code.</span>
+<span class="n">PA_ENDPOINT</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;BR&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.com.br&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CN&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.cn&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CA&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.ca&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DE&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.de&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ES&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.es&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;FR&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.fr&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;IN&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.in&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;IT&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.it&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;JP&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.co.jp&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;MX&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.com.mx&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;UK&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.co.uk&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;US&#39;</span><span class="p">:</span> <span class="s1">&#39;webservices.amazon.com&#39;</span>
+<span class="p">}</span>
+
+<span class="c1">#: A dictionary of Amazon market IDs, keyed by country code.</span>
+<span class="n">MARKETID</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;CA&#39;</span><span class="p">:</span> <span class="s1">&#39;A2EUQ1WTGCTBG2&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;MX&#39;</span><span class="p">:</span> <span class="s1">&#39;A1AM78C64UM0Y8&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;US&#39;</span><span class="p">:</span> <span class="s1">&#39;ATVPDKIKX0DER&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;DE&#39;</span><span class="p">:</span> <span class="s1">&#39;A1PA6795UKMFR9&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ES&#39;</span><span class="p">:</span> <span class="s1">&#39;A1RKKUPIHCS9HS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;FR&#39;</span><span class="p">:</span> <span class="s1">&#39;A13V1IB3VIYZZH&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;IT&#39;</span><span class="p">:</span> <span class="s1">&#39;APJ6JRA9NG5V4&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;UK&#39;</span><span class="p">:</span> <span class="s1">&#39;A1F83G8C2ARO7P&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;IN&#39;</span><span class="p">:</span> <span class="s1">&#39;A21TJRUUN4KGV&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;JP&#39;</span><span class="p">:</span> <span class="s1">&#39;A21TJRUUN4KGV&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CN&#39;</span><span class="p">:</span> <span class="s1">&#39;AAHKV2X7AFYLW&#39;</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="MWSError"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.MWSError">[docs]</a><span class="k">class</span> <span class="nc">MWSError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AmzCall"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.AmzCall">[docs]</a><span class="k">class</span> <span class="nc">AmzCall</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Base class for API objects. Handles building and signing requests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2009-01-01&#39;</span>
+    <span class="n">ACCOUNT_TYPE</span> <span class="o">=</span> <span class="s1">&#39;SellerId&#39;</span>
+    <span class="n">ACTION_TYPE</span> <span class="o">=</span> <span class="s1">&#39;Action&#39;</span>
+    <span class="n">USER_AGENT</span> <span class="o">=</span> <span class="s1">&#39;amazonmws/0.0.1 (Language=Python)&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">access_key</span><span class="p">,</span> <span class="n">secret_key</span><span class="p">,</span> <span class="n">account_id</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="s1">&#39;NA&#39;</span><span class="p">,</span> <span class="n">auth_token</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">default_market</span><span class="o">=</span><span class="s1">&#39;US&#39;</span><span class="p">,</span>
+                 <span class="n">uri</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">account_type</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">make_request</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_access_key</span> <span class="o">=</span> <span class="n">access_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_secret_key</span> <span class="o">=</span> <span class="n">secret_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_account_id</span> <span class="o">=</span> <span class="n">account_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_region</span> <span class="o">=</span> <span class="n">region</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_default_market</span> <span class="o">=</span> <span class="n">default_market</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_auth_token</span> <span class="o">=</span> <span class="n">auth_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_uri</span> <span class="o">=</span> <span class="n">uri</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">URI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">version</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_account_type</span> <span class="o">=</span> <span class="n">account_type</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNT_TYPE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_agent</span> <span class="o">=</span> <span class="n">user_agent</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">USER_AGENT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dummy_request_function</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span> <span class="o">=</span> <span class="n">MWS_ENDPOINT</span><span class="p">[</span><span class="n">region</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;Invalid region: </span><span class="si">{}</span><span class="s1">. Recognized values are </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">MWS_ENDPOINT</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="k">raise</span> <span class="n">MWSError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AmzCall.build_request_url"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.AmzCall.build_request_url">[docs]</a>    <span class="k">def</span> <span class="nf">build_request_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a properly formatted and signed request URL based on the given parameters.&quot;&quot;&quot;</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;AWSAccessKeyId&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_access_key</span><span class="p">,</span>
+                  <span class="bp">self</span><span class="o">.</span><span class="n">ACTION_TYPE</span><span class="p">:</span> <span class="n">action</span><span class="p">,</span>
+                  <span class="bp">self</span><span class="o">.</span><span class="n">ACCOUNT_TYPE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_account_id</span><span class="p">,</span>
+                  <span class="s1">&#39;SignatureMethod&#39;</span><span class="p">:</span> <span class="s1">&#39;HmacSHA256&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;SignatureVersion&#39;</span><span class="p">:</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Timestamp&#39;</span><span class="p">:</span> <span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%SZ&#39;</span><span class="p">,</span> <span class="n">gmtime</span><span class="p">()),</span>
+                  <span class="s1">&#39;Version&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_auth_token</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;MWSAuthToken&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_auth_token</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;List&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;List&#39;</span><span class="p">):</span>
+                <span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enumerate_param</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">v</span><span class="p">:</span>
+                <span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span><span class="n">v</span><span class="p">})</span>
+
+        <span class="c1"># Create the string to sign</span>
+        <span class="n">pairs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]),</span> <span class="n">safe</span><span class="o">=</span><span class="s1">&#39;-_.~&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">params</span><span class="p">)]</span>
+        <span class="n">request_desc</span> <span class="o">=</span> <span class="s1">&#39;&amp;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span>
+
+        <span class="n">sig_data</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{verb}</span><span class="se">\n</span><span class="si">{dom}</span><span class="se">\n</span><span class="si">{uri}</span><span class="se">\n</span><span class="si">{req}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">verb</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">dom</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_uri</span><span class="p">,</span> <span class="n">req</span><span class="o">=</span><span class="n">request_desc</span><span class="p">)</span>
+
+        <span class="c1"># Create the signature</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">hmac</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_secret_key</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">sig_data</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">sha256</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">())</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">signature</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span> <span class="n">safe</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Create the URL</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://</span><span class="si">{dom}{uri}</span><span class="s1">?</span><span class="si">{req}</span><span class="s1">&amp;Signature=</span><span class="si">{sig}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dom</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_uri</span><span class="p">,</span> <span class="n">req</span><span class="o">=</span><span class="n">request_desc</span><span class="p">,</span> <span class="n">sig</span><span class="o">=</span><span class="n">signature</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">url</span></div>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_do_api_call</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_do_api_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">extra_headers</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># If body is provided, include an MD5 signature in the header</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">body</span><span class="p">:</span>
+            <span class="n">md</span> <span class="o">=</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">md5</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">digest</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">extra_headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Content-MD5&#39;</span><span class="p">:</span> <span class="n">md</span><span class="p">,</span> <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;text/xml&#39;</span><span class="p">}</span>
+
+        <span class="n">headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_headers</span><span class="p">(</span><span class="o">**</span><span class="n">extra_headers</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_request_url</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_request</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">body</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AmzCall.build_headers"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.AmzCall.build_headers">[docs]</a>    <span class="k">def</span> <span class="nf">build_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a dictionary with header information.&quot;&quot;&quot;</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_agent</span><span class="p">}</span>
+        <span class="n">headers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">headers</span></div>
+
+<div class="viewcode-block" id="AmzCall.market_id"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.AmzCall.market_id">[docs]</a>    <span class="k">def</span> <span class="nf">market_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">market</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the Amazon Market ID for the given market.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MARKETID</span><span class="p">[</span><span class="n">market</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_market</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;Invalid market: </span><span class="si">{}</span><span class="s1">. Recognized values are </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">market</span><span class="p">,</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">MARKETID</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="k">raise</span> <span class="n">MWSError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AmzCall.enumerate_param"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.AmzCall.enumerate_param">[docs]</a>    <span class="k">def</span> <span class="nf">enumerate_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">root</span> <span class="o">==</span> <span class="s1">&#39;MarketplaceId&#39;</span><span class="p">:</span>
+            <span class="n">ptype</span> <span class="o">=</span> <span class="s1">&#39;Id&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ptype</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;List&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>        <span class="c1"># Ex: ASINList -&gt; ASIN</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.</span><span class="si">{}</span><span class="s1">.</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">base</span><span class="p">:</span><span class="n">val</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">params</span></div>
+
+    <span class="k">def</span> <span class="nf">_dummy_request_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Dummy request function.&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">make_request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_request</span>
+
+    <span class="nd">@make_request</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">make_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Expected callable object, got </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">func</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_make_request</span> <span class="o">=</span> <span class="n">func</span></div>
+
+
+<div class="viewcode-block" id="Feeds"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.Feeds">[docs]</a><span class="k">class</span> <span class="nc">Feeds</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Feeds section of the MWS API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2009-01-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="Finances"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.Finances">[docs]</a><span class="k">class</span> <span class="nc">Finances</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Finances section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/Finances/2015-05-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2015-05-01&#39;</span></div>
+
+
+<span class="k">class</span> <span class="nc">Products</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Products section of the MWS API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/Products/2011-10-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2011-10-01&#39;</span>
+
+
+<div class="viewcode-block" id="FulfillmentInboundShipment"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.FulfillmentInboundShipment">[docs]</a><span class="k">class</span> <span class="nc">FulfillmentInboundShipment</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Fulfillment Inbound Shipment section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/FulfillmentInboundShipment/2010-10-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2010-10-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="FulfillmentInventory"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.FulfillmentInventory">[docs]</a><span class="k">class</span> <span class="nc">FulfillmentInventory</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Fulfillment Inventory section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/FulfillmentInventory/2010-10-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2010-10-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="FulfillmentOutboundShipment"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.FulfillmentOutboundShipment">[docs]</a><span class="k">class</span> <span class="nc">FulfillmentOutboundShipment</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Fulfillment Outbound Shipment section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/FulfillmentOutboundShipment/2010-10-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2010-10-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="MerchantFulfillment"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.MerchantFulfillment">[docs]</a><span class="k">class</span> <span class="nc">MerchantFulfillment</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Merchant Fulfillment section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/MerchantFulfillment/2015-06-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2015-06-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="Orders"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.Orders">[docs]</a><span class="k">class</span> <span class="nc">Orders</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Orders section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/Orders/2013-09-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2013-09-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="Products"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.Products">[docs]</a><span class="k">class</span> <span class="nc">Products</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Products section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/Products/2011-10-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2011-10-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="Recommendations"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.Recommendations">[docs]</a><span class="k">class</span> <span class="nc">Recommendations</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Recommendations section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/Recommendations/2013-04-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2013-04-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="Reports"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.Reports">[docs]</a><span class="k">class</span> <span class="nc">Reports</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Reports section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span><span class="s1">&#39;2009-01-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="Sellers"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.Sellers">[docs]</a><span class="k">class</span> <span class="nc">Sellers</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Sellers section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/Sellers&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2011-07-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="Subscriptions"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.Subscriptions">[docs]</a><span class="k">class</span> <span class="nc">Subscriptions</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Subscriptions section of the API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/Subscriptions/2013-07-01&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;2013-07-01&#39;</span></div>
+
+
+<div class="viewcode-block" id="ProductAdvertising"><a class="viewcode-back" href="../../amazonmws.html#amazonmws.api.ProductAdvertising">[docs]</a><span class="k">class</span> <span class="nc">ProductAdvertising</span><span class="p">(</span><span class="n">AmzCall</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Interface to the Product Advertising API.&quot;&quot;&quot;</span>
+    <span class="n">URI</span> <span class="o">=</span> <span class="s1">&#39;/onca/xml&#39;</span>
+    <span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">ACCOUNT_TYPE</span> <span class="o">=</span> <span class="s1">&#39;AssociateTag&#39;</span>
+    <span class="n">ACTION_TYPE</span> <span class="o">=</span> <span class="s1">&#39;Operation&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">access_key</span><span class="p">,</span> <span class="n">secret_key</span><span class="p">,</span> <span class="n">account_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;region&#39;</span><span class="p">,</span> <span class="s1">&#39;US&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ProductAdvertising</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">access_key</span><span class="p">,</span> <span class="n">secret_key</span><span class="p">,</span> <span class="n">account_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span> <span class="o">=</span> <span class="n">PA_ENDPOINT</span><span class="p">[</span><span class="n">region</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;Invalid region: </span><span class="si">{}</span><span class="s1">. Recognized values are </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PA_ENDPOINT</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="k">raise</span> <span class="n">MWSError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_api_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;Service&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;AWSECommerceService&#39;</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_headers</span><span class="p">()</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_request_url</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">amazonmws</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">amazonmws</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Garrett Myrick.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

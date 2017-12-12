@@ -1,2 +1,2 @@
 from .api import *
-from .throttler import Throttler, ThrottleLimits, LIMITS
+from .throttler import Throttler, DEFAULT_LIMITS

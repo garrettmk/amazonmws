@@ -1,106 +1,86 @@
-import time
-import collections
-
 from functools import partial
+from time import time, sleep
 from .api import AmzCall
 
 
-ThrottleLimits = collections.namedtuple('ThrottleLimits', ['quota_max', 'restore_rate', 'hourly_max'])
+########################################################################################################################
 
-LIMITS = {'ListMatchingProducts':           ThrottleLimits(20, 5, 720),
-          'GetMatchingProduct':             ThrottleLimits(20, 0.1, 7200),
-          'GetMatchingProductForId':        ThrottleLimits(20, 0.5, 7200),
-          'GetCompetitivePricingForSku':    ThrottleLimits(20, 0.1, 36000),
-          'GetCompetitivePricingForAsin':   ThrottleLimits(20, 0.1, 36000),
-          'GetMyFeesEstimate':              ThrottleLimits(20, 0.1, 36000)}
+
+DEFAULT_LIMITS = {
+    'ListMatchingProducts': {
+        'quota_max': 20,
+        'restore_rate': 5,
+        'hourly_max': 720
+    },
+    'GetServiceStatus': {
+        'quota_max': 2,
+        'restore_rate': 300
+    }
+}
+
+
+########################################################################################################################
 
 
 class Throttler:
 
-    def __init__(self, api=None, blocking=True):
-        """Initialize the Throttler object. If an api is provided, it's request function is set to the Throttler's
-        request function. If blocking is set to True, sleep() will be called as-needed to keep from going over the
-        quota for a particular request."""
-        self._quota_level = {}
-        self._last_quota_update = {}
-        self._priority_max = {}
-        self._blocking = blocking
-        self._api = api
+    def __init__(self, api=None, limits=None):
+        """Initialize the Throttler object."""
+        self.limits = dict(DEFAULT_LIMITS) if limits is None else limits
+        self._usage = {}
+        self.api = api
 
-    def _pre_request(self, action, **kwargs):
-        """Updates the quota for the specified action. If blocking=True, this method will sleep() if necessary
-        before passing allowing the request to continue."""
-        priority = kwargs.pop('priority', 0)
-
-        if self._blocking:
-            time.sleep(self.request_wait(action, priority))
-        else:
-            self._update_quota(action)
-
-        self._quota_level[action] = self._quota_level.get(action, 0) + 1
-
-        if self._api:
-            return self._api.__getattr__(action)(**kwargs)
-
-    def _update_quota(self, action):
-        """Restore the quota as needed, based on the elapsed time since this method was last called."""
+    def restore_quota(self, action):
+        """Updates the quota for a given action, based on the elapsed time since the last request."""
         try:
-            LIMITS[action]
-            self._quota_level[action]
+            limits = self.limits[action]
+            restore_rate = limits['restore_rate']
+            usage = self._usage[action]
+            quota_level, last_request = usage['quota_level'], usage['last_request']
         except KeyError:
             return
 
-        now = time.time()
-        restore_rate = LIMITS[action].restore_rate
-        quota_level = self._quota_level[action]
-        last_update = self._last_quota_update.get(action, now)
+        elapsed = time() - last_request
+        restored = elapsed // restore_rate
 
-        self._quota_level[action] = max(quota_level - (now - last_update) // restore_rate, 0)
-        self._last_quota_update[action] = now
+        self._usage[action]['quota_level'] = max(quota_level - restored, 0)
 
-    def request_wait(self, action, priority=0):
-        """Return the number of seconds to wait before there is room in the quota for action."""
+    def calculate_wait(self, action):
+        """Return how long to wait, in seconds, before a given action can be performed."""
         try:
-            LIMITS[action]
-            self._quota_level[action]
+            quota_max, restore_rate = self.limits[action]['quota_max'], self.limits[action]['restore_rate']
+            quota_level, last_request = self._usage[action]['quota_level'], self._usage[action]['last_request']
         except KeyError:
             return 0
 
-        self._update_quota(action)
+        if quota_level < quota_max:
+            return 0
 
-        quota_max = sum(self._priority_max.get(action, [])[:priority + 1])
-        quota_max = quota_max if quota_max else LIMITS[action].quota_max
+        elapsed = time() - last_request
+        return (quota_level + 1 - quota_max) * restore_rate - elapsed
 
-        wait = max(self._quota_level[action] + 1 - quota_max, 0) * LIMITS[action].restore_rate
-        return wait
+    def add_to_quota(self, action):
+        """Updates the usage information for the given action."""
+        if action not in self.limits:
+            return
 
-    def set_priority_quota(self, action, priority, quota):
-        """Reserve part of an action's quota for the specified priority."""
-        self._priority_max[action] = self._priority_max.get(action, [])
+        action_usage = self._usage.get(action, {})
+        action_usage.update(
+            quota_level=action_usage.get('quota_level', 0) + 1,
+            last_request=time()
+        )
+        self._usage[action] = action_usage
 
-        if priority + 1 > len(self._priority_max[action]):
-            self._priority_max[action].extend([0 for i in range(priority + 1 - len(self._priority_max[action]))])
+    def api_call(self, action, **kwargs):
+        """Forwards an API call to the API object (if provided), sleep()ing as necessary."""
+        self.restore_quota(action)
+        sleep(self.calculate_wait(action))
+        self.restore_quota(action)
+        self.add_to_quota(action)
 
-        self._priority_max[action][priority] = quota
+        if self.api is not None:
+            return getattr(self.api, action)(**kwargs)
 
-    @property
-    def api(self):
-        return self._api
-
-    @api.setter
-    def api(self, api):
-        if not isinstance(api, AmzCall):
-            raise TypeError('Expected MWS API object, got %s' % type(api))
-        self._api = api
-
-    @property
-    def blocking(self):
-        return self._blocking
-
-    @blocking.setter
-    def blocking(self, value):
-        self._blocking = bool(value)
-
-    def __getattr__(self, action):
-        return partial(self._pre_request, action)
-
+    def __getattr__(self, name):
+        """Shortcut for calling api_call() directly."""
+        return partial(self.api_call, name)

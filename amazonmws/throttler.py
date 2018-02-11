@@ -1,6 +1,5 @@
 from functools import partial
 from time import time, sleep
-from .api import AmzCall
 
 
 ########################################################################################################################
@@ -80,6 +79,15 @@ DEFAULT_LIMITS = {
     'GetServiceStatus': {
         'quota_max': 2,
         'restore_rate': 300
+    },
+    # Fulfillment Inventory
+    'ListInventorySupply': {
+        'quota_max': 30,
+        'restore_rate': .5,
+    },
+    'ListInventorySupplyByNextToken': {
+        'quota_max': 30,
+        'restore_rate': .5
     }
 }
 
@@ -138,6 +146,10 @@ class Throttler:
 
     def api_call(self, action, **kwargs):
         """Forwards an API call to the API object (if provided), sleep()ing as necessary."""
+        cached_value = self.cache_lookup(action, **kwargs)
+        if cached_value is not None:
+            return cached_value
+
         self.restore_quota(action)
         sleep(self.calculate_wait(action))
         self.restore_quota(action)
@@ -149,3 +161,8 @@ class Throttler:
     def __getattr__(self, name):
         """Shortcut for calling api_call() directly."""
         return partial(self.api_call, name)
+
+    def cache_lookup(self, name, **kwargs):
+        """Called prior to making an API call. If this function returns anything other than None,
+        it will be used as the return value for api_call()."""
+        return None

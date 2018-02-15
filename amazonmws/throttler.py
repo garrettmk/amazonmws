@@ -6,6 +6,7 @@ from time import time, sleep
 
 
 DEFAULT_LIMITS = {
+    # Products
     'ListMatchingProducts': {
         'quota_max': 20,
         'restore_rate': 5,
@@ -80,6 +81,17 @@ DEFAULT_LIMITS = {
         'quota_max': 2,
         'restore_rate': 300
     },
+
+    # Product Advertising
+    'ItemLookup': {
+        'quota_max': 1,
+        'restore_rate': 1
+    },
+    'ItemSearch': {
+        'quota_max': 1,
+        'restore_rate': 1
+    },
+    
     # Fulfillment Inventory
     'ListInventorySupply': {
         'quota_max': 30,

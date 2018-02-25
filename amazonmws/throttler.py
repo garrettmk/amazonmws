@@ -100,6 +100,78 @@ DEFAULT_LIMITS = {
     'ListInventorySupplyByNextToken': {
         'quota_max': 30,
         'restore_rate': .5
+    },
+
+    # Reports
+    'RequestReport': {
+        'quota_max': 15,
+        'restore_rate': 60,
+        'hourly_max': 60
+    },
+    'GetReportRequestList': {
+        'quota_max': 10,
+        'restore_rate': 45,
+        'hourly_max': 80
+    },
+    'GetReportRequestListByNextToken': {
+        'quota_max': 30,
+        'restore_rate': 2,
+        'hourly_max': 1800
+    },
+    'GetReportRequestCount': {
+        'quota_max': 10,
+        'restore_rate': 45,
+        'hourly_max': 80
+    },
+    'CancelReportRequests': {
+        'quota_max': 10,
+        'restore_rate': 45,
+        'hourly_max': 80
+    },
+    'GetReportList': {
+        'quota_max': 10,
+        'restore_rate': 60,
+        'hourly_max': 60
+    },
+    'GetReportListByNextToken': {
+        'quota_max': 30,
+        'restore_rate': 2,
+        'hourly_max': 1800
+    },
+    'GetReportCount': {
+        'quota_max': 10,
+        'restore_rate': 45,
+        'hourly_max': 80
+    },
+    'GetReport': {
+        'quota_max': 15,
+        'restore_rate': 60,
+        'hourly_max': 60
+    },
+    'ManageReportSchedule': {
+        'quota_max': 10,
+        'restore_rate': 45,
+        'hourly_max': 80
+    },
+    'GetReportScheduleList': {
+        'quota_max': 10,
+        'restore_rate': 45,
+        'hourly_max': 80
+    },
+    'GetReportScheduleListByNextToken': {
+        'quota_max': 30,
+        'restore_rate': 2,
+        'hourly_max': 1800
+    },
+    'GetReportScheduleCount': {
+        'quota_max': 10,
+        'restore_rate': 45,
+        'hourly_max': 80
+    },
+    'UpdateReportAcknowledgements': {
+        'quota_max': 10,
+        'restore_rate': 45,
+        'hourly_max': 80
     }
 }
 

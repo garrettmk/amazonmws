@@ -172,6 +172,28 @@ DEFAULT_LIMITS = {
         'quota_max': 10,
         'restore_rate': 45,
         'hourly_max': 80
+    },
+
+    # Orders
+    'ListOrders': {
+        'quota_max': 6,
+        'restore_rate': 60,
+    },
+    'ListOrdersByNextToken': {
+        'quota_max': 6,
+        'restore_rate': 60
+    },
+    'GetOrder': {
+        'quota_max': 6,
+        'restore_rate': 60
+    },
+    'ListOrderItems': {
+        'quota_max': 30,
+        'restore_rate': 2
+    },
+    'ListOrderItemsByNextToken': {
+        'quota_max': 30,
+        'restore_rate': 2
     }
 }
 

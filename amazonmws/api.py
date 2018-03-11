@@ -60,6 +60,14 @@ MARKETID = {
 }
 
 
+def structured_list(root_label, sub_label, items):
+    """Build a structured list of parameters. Example: structured_list('ReportRequestIdList', 'Id', ['one', 'two'])
+    returns {'ReportRequestIdList.Id.1': 'one', 'ReportRequestIdList.Id.2': 'two'}"""
+    return {
+        '.'.join((root_label, sub_label, str(i))): v for i, v in enumerate(items, start=1)
+    }
+
+
 class AmzCall:
     """Base class for API objects. Handles building and signing requests.
     """
@@ -115,22 +123,17 @@ class AmzCall:
 
         params = {
             'AWSAccessKeyId': self._access_key,
-             self.ACTION_TYPE: action,
-             self.ACCOUNT_TYPE: self._account_id,
-             'SignatureMethod': 'HmacSHA256',
-             'SignatureVersion': '2',
-             'Timestamp': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
-             'Version': self.VERSION
+            self.ACTION_TYPE: action,
+            self.ACCOUNT_TYPE: self._account_id,
+            'SignatureMethod': 'HmacSHA256',
+            'SignatureVersion': '2',
+            'Timestamp': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
+            'Version': self.VERSION,
+            **kwargs
         }
 
         if self._auth_token:
             params['MWSAuthToken'] = self._auth_token
-
-        for k, v in kwargs.items():
-            if k.endswith('List') or k.startswith('List'):
-                params.update(self.enumerate_param(k, v))
-            elif v:
-                params.update({k: v})
 
         quoted_params = {key:
             urllib.parse.quote(

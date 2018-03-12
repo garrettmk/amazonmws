@@ -63,9 +63,17 @@ MARKETID = {
 def structured_list(root_label, sub_label, items):
     """Build a structured list of parameters. Example: structured_list('ReportRequestIdList', 'Id', ['one', 'two'])
     returns {'ReportRequestIdList.Id.1': 'one', 'ReportRequestIdList.Id.2': 'two'}"""
-    return {
-        '.'.join((root_label, sub_label, str(i))): v for i, v in enumerate(items, start=1)
-    }
+    result = {}
+    for idx, item in enumerate(items, start=1):
+        if isinstance(item, dict):
+            sub_items = {f'{idx}.{key}': val for key, val in item.items()}
+        else:
+            sub_items = {f'{idx}': item}
+
+        for sub_item, value in sub_items.items():
+            result[f'{root_label}.{sub_label}.{sub_item}'] = value
+
+    return result
 
 
 class AmzCall:

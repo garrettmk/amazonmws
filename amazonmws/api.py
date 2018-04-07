@@ -65,11 +65,7 @@ def structured_list(root_label, sub_label, items):
     returns {'ReportRequestIdList.Id.1': 'one', 'ReportRequestIdList.Id.2': 'two'}"""
     result = {}
     for idx, item in enumerate(items, start=1):
-        if isinstance(item, dict):
-            sub_items = {f'{idx}.{key}': val for key, val in item.items()}
-        else:
-            sub_items = {f'{idx}': item}
-
+        sub_items = {f'{idx}.{key}': val for key, val in item.items()} if isinstance(item, dict) else {f'{idx}': item}
         for sub_item, value in sub_items.items():
             result[f'{root_label}.{sub_label}.{sub_item}'] = value
 
@@ -148,7 +144,7 @@ class AmzCall:
                 str(value),
                 safe='-_.~',
                 encoding='utf-8'
-            ) for key, value in params.items()
+            ) for key, value in params.items() if value is not None
         }
 
         return '&'.join((f'{key}={quoted_params[key]}' for key in sorted(quoted_params)))

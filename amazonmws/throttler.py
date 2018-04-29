@@ -194,6 +194,28 @@ DEFAULT_LIMITS = {
     'ListOrderItemsByNextToken': {
         'quota_max': 30,
         'restore_rate': 2
+    },
+
+    # FulfillmentInboundShipment
+    'ListInboundShipments': {
+        'quota_max': 30,
+        'restore_rate': .5
+    },
+    'ListInboundShipmentsByNextToken': {
+        'quota_max': 30,
+        'restore_rate': .5
+    },
+    'ListInboundShipmentItems': {
+        'quota_max': 30,
+        'restore_rate': .5
+    },
+    'ListInboundShipmentItemsByNextToken': {
+        'quota_max': 30,
+        'restore_rate': .5
+    },
+    'GetTransportContent': {
+        'quota_max': 30,
+        'restore_rate': .5
     }
 }
 
